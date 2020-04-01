@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, date
+import time
 #from datemite = modulo, import datetime = submodulo
 #datetime fornece mecanismo para calcular o tempo
 
@@ -12,3 +13,14 @@ if right_this_minute in odds:
     print('This minute seems a little odd.')
 else:
     print('Not an odd minute')
+
+print(date.today())
+print(date.today().day)
+print(date.today().month)
+print(date.today().year)
+print(date.isoformat(date.today()))
+
+hora_atual = time.strftime('%H:%M')
+dia_semana = time.strftime('%A %p')
+print(hora_atual)
+print(dia_semana)
