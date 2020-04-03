@@ -78,4 +78,37 @@ AttributeError: 'list' object has no attribute 'inser'
 >>> nums4
 [1, 2, 'Two-and-a-half', 3, 4]
 >>>
+
+>>> letters.clear()
+>>> saying = "Don't Panic!"
+>>> letters = list(saying)
+>>> letters
+['D', 'o', 'n', "'", 't', ' ', 'P', 'a', 'n', 'i', 'c', '!']
+>>> letters[0]
+'D'
+>>> letters[-1]
+'!'
+>>> letters[3]
+"'"
+>>> letters[-9]
+"'"
+>>> first = letters[0]
+>>> last = letters[-1]
+>>> print(f'primeira: {first}, ultima: {last}'
+)
+primeira: D, ultima: !
+
+Fatiamento:
+>>> letters
+['D', 'o', 'n', "'", 't', ' ', 'P', 'a', 'n', 'i', 'c', '!']
+>>> letters[0:10:3]
+['D', "'", 'P', 'i']
+>>> letters[:3]
+['D', 'o', 'n']
+>>> letters[3:]
+["'", 't', ' ', 'P', 'a', 'n', 'i', 'c', '!']
+>>> letters[::2]
+['D', 'n', 't', 'P', 'n', 'c']
+>>> 
 """
+
