@@ -1,15 +1,39 @@
 from flask import Flask, render_template, request, redirect, escape
 from datetime import date
 from vsearch import search4letters
+import mysql.connector
 
 app = Flask(__name__)
 
-def log_request(req: 'flask_request', res: str) -> None:
+def log_request_old(req: 'flask_request', res: str) -> None:
     with open('vsearch.log', 'a') as log:
         #print(str(dir(req)), res, file=log) -> retorna todas as propriedades e metodos de um objeto
         escape(print(f'Dados Enviados: {req.form}',f'IP Addr: {req.remote_addr}',f'Navegador: {req.user_agent}',
               f'Resultado: {res}', file=log, sep='|'))
        #print('<br>', file=log)
+       
+       
+def log_request(req: 'flask_request', res: str) -> None:
+    """Detalhes de log das requisicoes web a seus resultados"""
+    dbconfig = { 'host': '127.0.0.1',
+                'user': 'vsearch',
+                'password': 'vsearchpasswd',
+                'database': 'vsearchlogDB',
+                }
+    conn = mysql.connector.connect(**dbconfig)
+    cursor = conn.cursor()
+    _SQL = """insert into log
+    (phrase, letters, ip, browser_string, results)
+    values
+    (%s, %s, %s, %s, %s)"""
+    cursor.execute(_SQL, (req.form['phrase'],
+                          req.form['letters'],
+                          req.remote_addr,
+                          req.user_agent.browser,
+                          res))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 @app.route('/index')
