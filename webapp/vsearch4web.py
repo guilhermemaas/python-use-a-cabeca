@@ -2,8 +2,15 @@ from flask import Flask, render_template, request, redirect, escape
 from datetime import date
 from vsearch import search4letters
 import mysql.connector
+from DBcm import UseDatabase
 
 app = Flask(__name__)
+
+app.config['dbconfig'] = { 'host': '127.0.0.1',
+                'user': 'vsearch',
+                'password': 'vsearchpasswd',
+                'database': 'vsearchlogDB',
+                }
 
 def log_request_old(req: 'flask_request', res: str) -> None:
     with open('vsearch.log', 'a') as log:
@@ -11,15 +18,11 @@ def log_request_old(req: 'flask_request', res: str) -> None:
         escape(print(f'Dados Enviados: {req.form}',f'IP Addr: {req.remote_addr}',f'Navegador: {req.user_agent}',
               f'Resultado: {res}', file=log, sep='|'))
        #print('<br>', file=log)
-       
-       
-def log_request(req: 'flask_request', res: str) -> None:
-    """Detalhes de log das requisicoes web a seus resultados"""
-    dbconfig = { 'host': '127.0.0.1',
-                'user': 'vsearch',
-                'password': 'vsearchpasswd',
-                'database': 'vsearchlogDB',
-                }
+
+
+def log_request_old2(req: 'flask_request', res: str) -> None:
+    """Detalhes de log das requisicoes web a seus resultados
+    Obs.: Inutilizado"""
     conn = mysql.connector.connect(**dbconfig)
     cursor = conn.cursor()
     _SQL = """insert into log
@@ -34,8 +37,27 @@ def log_request(req: 'flask_request', res: str) -> None:
     conn.commit()
     cursor.close()
     conn.close()
-
-
+    
+       
+def log_request(req: 'flask_request', res: str) -> None:
+    """Detalhes de log das requisicoes web a seus resultados"""
+    dbconfig = { 'host': '127.0.0.1',
+                'user': 'vsearch',
+                'password': 'vsearchpasswd',
+                'database': 'vsearchlogDB',
+                }
+    with UseDatabase(app.config['dbconfig']) as cursor:
+        _SQL = """insert into log
+        (phrase, letters, ip, browser_string, results)
+        values
+        (%s, %s, %s, %s, %s)"""
+        cursor.execute(_SQL, (req.form['phrase'],
+                            req.form['letters'],
+                            req.remote_addr,
+                            req.user_agent.browser,
+                            res))
+        
+    
 @app.route('/index')
 def index() -> 302:
     return redirect('/entry')
@@ -95,6 +117,20 @@ def view_log2() -> 'html':
     titles= ('Dados Enviados', 'IP addr', 'Navegador', 'Resultados')
     return render_template('viewlog.html',
                            the_title='View Log',
+                           the_row_titles=titles,
+                           the_data=contents)
+    
+
+@app.route('/viewlog3')
+def view_log3() -> 'html':
+    with UseDatabase(app.config['dbconfig']) as cursor:
+        _SQL = """select phrase, letters, ip, browser_string, results
+        from log"""
+        cursor.execute(_SQL)
+        contents = cursor.fetchall()
+    titles = ('Frase', 'Letras', 'Endereco IP', 'Navegador', 'Resultados')
+    return render_template('viewlog.html',
+                           the_title='Visualizar Log:',
                            the_row_titles=titles,
                            the_data=contents)
 
