@@ -1,5 +1,13 @@
 from flask import Flask, session
 from checker import check_logged_in
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+import logging
+
+sentry_sdk.init(
+    dsn="https://bd717991e1bc4bafa2813e75a86f6611@o378968.ingest.sentry.io/5203137",
+    integrations=[FlaskIntegration()]
+)
 
 app = Flask(__name__)
 
@@ -13,6 +21,15 @@ def hello() -> str:
 @check_logged_in
 def page1() -> str:
     return 'This is page 1.'
+
+
+@app.route('/erro')
+def erro() -> int:
+    try:
+        return str(1/0)
+    except:
+        logging.exception('Erro')
+        return str(0)
 
 
 @app.route('/page2')

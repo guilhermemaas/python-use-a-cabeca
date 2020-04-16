@@ -1,8 +1,19 @@
-from flask import Flask, render_template, request, redirect, escape
+from flask import Flask, render_template, request, redirect, escape, session
 from datetime import date
 from vsearch import search4letters
 import mysql.connector
 from DBcm import UseDatabase
+from check_login import check_logged_in
+from time import sleep
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+import logging
+import sys
+
+sentry_sdk.init(
+    dsn="https://bd717991e1bc4bafa2813e75a86f6611@o378968.ingest.sentry.io/5203137",
+    integrations=[FlaskIntegration()]
+)
 
 app = Flask(__name__)
 
@@ -11,6 +22,18 @@ app.config['dbconfig'] = { 'host': '127.0.0.1',
                 'password': 'vsearchpasswd',
                 'database': 'vsearchlogDB',
                 }
+
+@app.route('/login')
+def login() -> str:
+    session['logged_in'] = True
+    return 'Voce esta logado!'
+
+
+@app.route('/logout')
+def logout() -> str:
+    session.pop('logged_in')
+    return 'Voce foi deslogado com sucesso!'
+
 
 def log_request_old(req: 'flask_request', res: str) -> None:
     with open('vsearch.log', 'a') as log:
@@ -41,11 +64,6 @@ def log_request_old2(req: 'flask_request', res: str) -> None:
        
 def log_request(req: 'flask_request', res: str) -> None:
     """Detalhes de log das requisicoes web a seus resultados"""
-    dbconfig = { 'host': '127.0.0.1',
-                'user': 'vsearch',
-                'password': 'vsearchpasswd',
-                'database': 'vsearchlogDB',
-                }
     with UseDatabase(app.config['dbconfig']) as cursor:
         _SQL = """insert into log
         (phrase, letters, ip, browser_string, results)
@@ -74,7 +92,11 @@ def search() -> 'html':
     letters = request.form['letters']
     title = 'Here are your results:'
     results = str(search4letters(phrase, letters))
-    log_request(request, results)
+    try:
+        log_request(request, results)
+    except Exception as err:
+        logging.exception('Erro ao se conectar ao banco de dados.')
+        return f'Erro ao se conectar ao banco de dados.\n{str(err)}'
     return render_template('results.html',
                            the_phrase=phrase, 
                            the_letters=letters,
@@ -122,6 +144,7 @@ def view_log2() -> 'html':
     
 
 @app.route('/viewlog3')
+@check_logged_in
 def view_log3() -> 'html':
     with UseDatabase(app.config['dbconfig']) as cursor:
         _SQL = """select phrase, letters, ip, browser_string, results
@@ -135,5 +158,6 @@ def view_log3() -> 'html':
                            the_data=contents)
 
 
+app.secret_key = 'ADeathYouWillNeverEscape'
 if __name__ == '__main__':
     app.run(port='5500', debug=True)
