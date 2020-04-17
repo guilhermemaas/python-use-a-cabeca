@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, escape, session
+from flask import Flask, render_template, request, redirect, escape, session, copy_current_request_context
 from datetime import date
 from vsearch import search4letters
 import mysql.connector
@@ -9,6 +9,7 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 import logging
 import sys
+from threading import Thread
 
 sentry_sdk.init(
     dsn="https://bd717991e1bc4bafa2813e75a86f6611@o378968.ingest.sentry.io/5203137",
@@ -62,9 +63,10 @@ def log_request_old2(req: 'flask_request', res: str) -> None:
     conn.close()
     
        
-def log_request(req: 'flask_request', res: str) -> None:
+def log_request_old3(req: 'flask_request', res: str) -> None:
     """Detalhes de log das requisicoes web a seus resultados"""
     with UseDatabase(app.config['dbconfig']) as cursor:
+        sleep(5)
         _SQL = """insert into log
         (phrase, letters, ip, browser_string, results)
         values
@@ -88,15 +90,33 @@ def data_atual() -> str:
 
 @app.route('/search4', methods=['POST'])
 def search() -> 'html':
+    
+    @copy_current_request_context
+    def log_request(req: 'flask_request', res: str) -> None:
+        """Detalhes de log das requisicoes web a seus resultados"""
+        sleep(5)
+        with UseDatabase(app.config['dbconfig']) as cursor:
+            _SQL = """insert into log
+            (phrase, letters, ip, browser_string, results)
+            values
+            (%s, %s, %s, %s, %s)"""
+            cursor.execute(_SQL, (req.form['phrase'],
+                                req.form['letters'],
+                                req.remote_addr,
+                                req.user_agent.browser,
+                                res))
+            
     phrase = request.form['phrase']
     letters = request.form['letters']
     title = 'Here are your results:'
     results = str(search4letters(phrase, letters))
     try:
-        log_request(request, results)
+        t = Thread(target=log_request, args=(request, results))
+        t.start()
+        #log_request(request, results)
     except Exception as err:
-        logging.exception('Erro ao se conectar ao banco de dados.')
-        print(f'Erro ao se conectar ao banco de dados.\n{str(err)}')
+        #logging.exception('Erro ao se conectar ao banco de dados.')
+        print('Erro ao se conectar ao banco de dados.', str(err))
     return render_template('results.html',
                            the_phrase=phrase, 
                            the_letters=letters,
