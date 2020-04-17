@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, escape, session
 from datetime import date
 from vsearch import search4letters
 import mysql.connector
-from DBcm import UseDatabase
+from DBcm import UseDatabase, ConnectionError, CredentialsError, SQLError
 from check_login import check_logged_in
 from time import sleep
 import sentry_sdk
@@ -96,7 +96,7 @@ def search() -> 'html':
         log_request(request, results)
     except Exception as err:
         logging.exception('Erro ao se conectar ao banco de dados.')
-        return f'Erro ao se conectar ao banco de dados.\n{str(err)}'
+        print(f'Erro ao se conectar ao banco de dados.\n{str(err)}')
     return render_template('results.html',
                            the_phrase=phrase, 
                            the_letters=letters,
@@ -146,17 +146,26 @@ def view_log2() -> 'html':
 @app.route('/viewlog3')
 @check_logged_in
 def view_log3() -> 'html':
-    with UseDatabase(app.config['dbconfig']) as cursor:
-        _SQL = """select phrase, letters, ip, browser_string, results
-        from log"""
-        cursor.execute(_SQL)
-        contents = cursor.fetchall()
-    titles = ('Frase', 'Letras', 'Endereco IP', 'Navegador', 'Resultados')
-    return render_template('viewlog.html',
-                           the_title='Visualizar Log:',
-                           the_row_titles=titles,
-                           the_data=contents)
-
+    try:
+        with UseDatabase(app.config['dbconfig']) as cursor:
+            _SQL = """select phrase, letters, ip, browser_string, results
+            from log"""
+            cursor.execute(_SQL)
+            contents = cursor.fetchall()
+        titles = ('Frase', 'Letras', 'Endereco IP', 'Navegador', 'Resultados')
+        return render_template('viewlog.html',
+                            the_title='Visualizar Log:',
+                            the_row_titles=titles,
+                            the_data=contents)
+    except ConnectionError as err:
+        print('Is your database switched on? Error:', str(err))
+    except CredentialsError as err:
+        print('User-ID/Password issues. Error: ', str(err))
+    except SQLError as err:
+        print('Is your Query correct? Error: ', str(err))
+    except Exception as err:
+        print('Something went wrong: ', str(err))
+    return 'Error'
 
 app.secret_key = 'ADeathYouWillNeverEscape'
 if __name__ == '__main__':
