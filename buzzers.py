@@ -107,3 +107,18 @@ for vowel in vowels:
 print(found)
 found2 = {vowel for vowel in vowels if vowel in message}
 print(found2)
+
+#Gerador (Tuplas sao imutaveis, nao existe um "tuplecomp", como listcomp, dictcomp ou setcomp)
+#parecedo com listcomp, porem vai liberando resultado a resultado, itens de dados um de cada vez
+#da iteracao, liberando memoria. Ja uma listcomp vai processar tudo primeiro
+
+#listcomp vs generator
+import requests
+
+urls = ('https://adrenaline.com.br', 'https://www.otakupt.com/', 'https://gizmodo.uol.com.br/')
+#listcomp:
+for resp in [requests.get(url) for url in urls]:
+    print(len(resp.content), '->', resp.status_code, '->', resp.url)
+#generator:
+for resp in (requests.get(url) for url in urls):
+    print(len(resp.content), '->', resp.status_code, '->', resp.url)
