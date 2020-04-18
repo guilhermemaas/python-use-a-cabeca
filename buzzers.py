@@ -46,7 +46,7 @@ for fd in flights.values():
 print(flight_destinations) 
 print_divisor()
 
-#Compressao, para listas e for
+#Compreensao, para listas e for
 more_dests = []
 more_dests = [fd.title() for fd in flights.values()] #Itera a lista o dict flights, aplicando o title()
 print(more_dests)
@@ -54,9 +54,9 @@ print_divisor()
 flight_times2 = [convert2ampm(ft) for ft in flights.keys()]
 print(flight_times2)
 print_divisor()
-#Compressao, para dicionarios:
+#Compreensao, para dicionarios:
 more_flights = {convert2ampm(key): value.title() for key, value in flights.items()}
-print(more_flights)
+print(more_flights) 
 
 #Adicionando ifs nas compressoes
 print_divisor()
@@ -69,3 +69,41 @@ just_freeport2 = {convert2ampm(key): value.title()
                   for key, value in flights.items()
                   if value == 'FREEPORT'}
 print(just_freeport2)
+
+#Horarios por destino
+print_divisor()
+print('Horarios por destino:')
+dest = set(more_flights.values())
+print(dest)
+print_divisor()
+west_times = []
+for key, value in more_flights.items():
+    if value == 'West End':
+        west_times.append(key)
+print(f'West Times: {west_times}.')
+west_times2 = [key for key, value in more_flights.items() if value == 'West End']
+print(f'West Times2: {west_times2}.')
+#Final
+for dest in set(more_flights.values()):
+    print(dest, '->', [key for key, value in more_flights.items() if value == dest])
+#Adicionando a um dict
+when = {}
+for dest in set(more_flights.values()):
+    when[dest] = [key for key, value in more_flights.items() if value == dest]
+pprint.pprint(when)
+print_divisor()
+when2 = {dest: [key for key, value in more_flights.items() if value == dest] 
+         for dest in set(more_flights.values())}
+pprint.pprint(when2)
+
+#Compreensao em Conjuntos
+print_divisor()
+vowels = {'a', 'e', 'i', 'o', 'u'}
+message = "Don't forget to pack your towel."
+found = set() #found = conjunto
+for vowel in vowels:
+    if vowel in message:
+        found.add(vowel)
+print(found)
+found2 = {vowel for vowel in vowels if vowel in message}
+print(found2)
