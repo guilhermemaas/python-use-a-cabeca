@@ -1,0 +1,4 @@
+Help on function search4vowels4 in module __main__:
+
+sseeaarrcchh44vvoowweellss44(word: str) -> set
+    Display any vowels found in asked-for word.
